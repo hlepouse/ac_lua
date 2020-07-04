@@ -1,0 +1,9 @@
+*.o
+*.lo
+luac
+*.la
+.libs
+linux_release
+src/lua/lua
+*.a
+*.so
