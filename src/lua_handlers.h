@@ -22,6 +22,7 @@
 
 #define LUA_ON_PLAYER_SHOOT "onPlayerShoot" // (int actor_cn, int gun, table to)
 #define LUA_ON_FLAG_ACTION "onFlagAction" // (int actor_cn, int action, int flag)
+#define LUA_ON_FLAG_ACTION_BEFORE "onFlagActionBefore" // (int actor_cn, int action, int flag)
 #define LUA_ON_LOOP "LuaLoop" // ()
 #define LUA_ON_NOTICE "onLuaNotice" // (obj message, string target)
 #define LUA_ON_PLAYER_SAY_VOICE "onPlayerSayVoice" // (int actor_cn, int sound)

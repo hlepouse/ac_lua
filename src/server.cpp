@@ -1024,6 +1024,7 @@ void flagmessage(int flag, int message, int actor, int cn = -1)
 
 void flagaction(int flag, int action, int actor, bool fromLua = false)
 {
+    if ( Lua::callHandler( LUA_ON_FLAG_ACTION_BEFORE, "iii", actor, action, flag ) == Lua::PLUGIN_BLOCK ) { sendflaginfo(); return; }
     if(!valid_flag(flag)) return;
     sflaginfo &f = sflaginfos[flag];
     sflaginfo &of = sflaginfos[team_opposite(flag)];
