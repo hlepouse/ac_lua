@@ -192,7 +192,10 @@ commands =
   {
     function (cn, args)
       if #args == 1 then
-        settimeleft(tonumber(args[1]))
+        local time_ext = tonumber(args[1])
+        if time_ext > 0 and time_ext <= 60 then
+          settimeleft(math.min(gettimeleft() + time_ext + 1, 60))
+        end
       end
     end
   };
