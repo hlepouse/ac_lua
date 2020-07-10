@@ -60,7 +60,7 @@ extern int numspawn[3], maploaded, numflagspawn[2];
 extern int verbose;
 
 #define AC_VERSION 1202
-#define AC_MASTER_URI "ms.cubers.net"
+#define AC_MASTER_URI "localhost"
 #define AC_MASTER_PORT 28760
 #define AC_MASTER_HTTP 1 // default
 #define AC_MASTER_RAW 0
