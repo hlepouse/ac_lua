@@ -170,7 +170,7 @@ end
 
 function sendMOTD(cn)
     if cn == nil then cn = -1 end
-    say("Welcome to Gema Haven ! Join us on discord.gg/gVbE2wm")
+    say("Welcome to Gema Haven ! Join us on discord.gg/gVbE2wm", cn)
     say("\f1Type \f2!cmds \f1to see available server commands", cn)
     mapbest(cn)
     commands["!mybest"][1](cn, {})
