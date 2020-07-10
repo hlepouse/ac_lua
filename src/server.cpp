@@ -960,17 +960,7 @@ inline void send_item_list(packetbuf &p)
     putint(p, SV_ITEMLIST);
     loopv(sents) if(sents[i].spawned)
     {
-    	if ( Lua::callHandler( LUA_ON_ITEM_SPAWN, "ii", i, sents[i].type ) == Lua::PLUGIN_BLOCK )
-        {
-          sents[i].spawned = false;
-          int spawntime( int );
-          if(!m_lms) sents[i].spawntime = spawntime(sents[i].type);
-        }
-        else
-        {
-          putint(p, i);
-          Lua::callHandler( LUA_ON_ITEM_SPAWN_AFTER, "ii", i, sents[i].type );
-        }
+        putint(p, i);
 	}
     putint(p, -1);
     if(m_flags) loopi(2) putflaginfo(p, i);
@@ -1533,7 +1523,6 @@ bool serverpickup(int i, int sender)         // server side item pickup, acknowl
         return false;
     }
     server_entity &e = sents[i];
-    if ( Lua::callHandler( LUA_ON_PLAYER_ITEM_PICKUP, "iii", sender, e.type, i ) == Lua::PLUGIN_BLOCK ) return false;
     if(!e.spawned)
     {
         if(!e.legalpickup && hn && !m_demo) logline(ACLOG_INFO, "[%s] tried to pick up entity #%d (%s) - can't be picked up in this gamemode or at all", hn, i, entnames[e.type]);
@@ -1562,7 +1551,6 @@ bool serverpickup(int i, int sender)         // server side item pickup, acknowl
     }
     e.spawned = false;
     if(!m_lms) e.spawntime = spawntime(e.type);
-    Lua::callHandler( LUA_ON_PLAYER_ITEM_PICKUP_AFTER, "iii", sender, e.type, i );
     return true;
 }
 
@@ -1574,18 +1562,9 @@ void checkitemspawns(int diff)
         sents[i].spawntime -= diff;
         if(sents[i].spawntime<=0)
         {
-            if ( Lua::callHandler( LUA_ON_ITEM_RESPAWN, "ii", i, sents[i].type ) == Lua::PLUGIN_BLOCK )
-            {
-              sents[i].spawned = false;
-              if(!m_lms) sents[i].spawntime = spawntime(sents[i].type);
-            }
-            else
-            {
-              sents[i].spawntime = 0;
-              sents[i].spawned = true;
-              sendf(-1, 1, "ri2", SV_ITEMSPAWN, i);
-              Lua::callHandler( LUA_ON_ITEM_RESPAWN_AFTER, "ii", i, sents[i].type );
-            }
+            sents[i].spawntime = 0;
+            sents[i].spawned = true;
+            sendf(-1, 1, "ri2", SV_ITEMSPAWN, i);
         }
     }
 }
