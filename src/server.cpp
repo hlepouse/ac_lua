@@ -2798,7 +2798,6 @@ void welcomepacket(packetbuf &p, int n)
         }
         if(c)
         {
-            logline(ACLOG_INFO, "send_item_list in welcomepacket");
             send_item_list(p, c); // this includes the flags
         }
     }
