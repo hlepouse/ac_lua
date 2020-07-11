@@ -404,13 +404,7 @@ struct servermaprot : serverconfigfile
     //virtual int get_next(bool fromLua = false);
     virtual int get_next(bool fromLua)
     {
-        int ccs = curcfgset;
-        while(!strcmp(configsets[curcfgset].mapname,configsets[ccs].mapname))
-        {
-            ccs++;
-            if(!configsets.inrange(ccs)) ccs=0;
-            if (ccs == curcfgset) break;
-        }
+        int ccs = rnd(configsets.length());
         if ( !fromLua ) curcfgset = ccs;
         return ccs;
     }
