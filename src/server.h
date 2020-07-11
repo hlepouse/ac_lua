@@ -227,6 +227,20 @@ struct medals
     }
 };
 
+struct server_entity_spawn
+{
+    bool spawned;
+    int spawntime;
+};
+
+struct server_entity            // server side version of "entity" type
+{
+    int type;
+    bool legalpickup, twice;
+    short x, y;
+    short z; /// Lua mod
+};
+
 struct client                   // server side version of "dynent" type
 {
     bool connecting; /// Lua mod
@@ -282,12 +296,22 @@ struct client                   // server side version of "dynent" type
     float pr;
     int yls, pls, tls;
     int bs, bt, blg, bp;
+    vector<server_entity_spawn> serverentityspawns;
 
     gameevent &addevent()
     {
         static gameevent dummy;
         if(events.length()>100) return dummy;
         return events.add();
+    }
+
+    void resetents(vector<server_entity> &sents)
+    {
+        serverentityspawns.shrink(0);
+        loopv(sents)
+        {
+            serverentityspawns.add({sents[i].legalpickup,0});
+        }
     }
 
     void mapchange(bool getmap = false)
@@ -369,15 +393,6 @@ struct worldstate
 {
     enet_uint32 uses;
     vector<uchar> positions, messages;
-};
-
-struct server_entity            // server side version of "entity" type
-{
-    int type;
-    bool spawned, legalpickup, twice;
-    int spawntime;
-    short x, y;
-    short z; /// Lua mod
 };
 
 struct clientidentity

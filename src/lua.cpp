@@ -648,7 +648,6 @@ void Lua::registerGlobals( lua_State *L )
   LUA_SET_FUNCTION (iscrouching);
   LUA_SET_FUNCTION (voteas);
   LUA_SET_FUNCTION (getitempos);
-  LUA_SET_FUNCTION (isitemspawned);
   LUA_SET_FUNCTION (setstate);
   LUA_SET_FUNCTION (sendspawn);
   LUA_SET_FUNCTION (clienthasflag);
@@ -2864,16 +2863,6 @@ LUA_FUNCTION (getitempos)
   lua_pushnumber( L, sents[item_id].y );
   lua_pushnumber( L, sents[item_id].z );
   return 3;
-}
-
-LUA_FUNCTION (isitemspawned)
-{
-  lua_checkstack( L, 1 );
-  if ( !lua_isnumber( L, 1 ) ) return 0;
-  int item_id = (int) lua_tonumber( L, 1 );
-  if ( !sents.inrange( item_id ) ) return 0;
-  lua_pushboolean( L, sents[item_id].spawned );
-  return 1;
 }
 
 LUA_FUNCTION (setstate)

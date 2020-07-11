@@ -408,10 +408,14 @@ savedscore *findscore(client &c, bool insert)
 
 void restoreserverstate(vector<entity> &ents)   // hack: called from savegame code, only works in SP
 {
-    loopv(sents)
+    loopv(clients) if(clients[i]->type!=ST_EMPTY)
     {
-        sents[i].spawned = ents[i].spawned;
-        sents[i].spawntime = 0;
+        client &c = *clients[i];
+        loopvj(c.serverentityspawns)
+        {
+            c.serverentityspawns[j].spawned = ents[j].spawned;
+            c.serverentityspawns[j].spawntime = 0;
+        }
     }
 }
 
@@ -955,13 +959,14 @@ void putflaginfo(packetbuf &p, int flag)
     }
 }
 
-inline void send_item_list(packetbuf &p)
+inline void send_item_list(packetbuf &p, client *c)
 {
     putint(p, SV_ITEMLIST);
-    loopv(sents) if(sents[i].spawned)
+    loopv(c->serverentityspawns) if(c->serverentityspawns[i].spawned)
     {
+        //logline(ACLOG_INFO, "add item");
         putint(p, i);
-	}
+    }
     putint(p, -1);
     if(m_flags) loopi(2) putflaginfo(p, i);
 }
@@ -1497,7 +1502,7 @@ int numplayers()
 
 int spawntime(int type)
 {
-    int np = numplayers();
+    int np = 1;
     np = np<3 ? 4 : (np>4 ? 2 : 3);    // Some spawn times are dependent on the number of players.
     int sec = 0;
     switch(type)
@@ -1516,55 +1521,61 @@ int spawntime(int type)
 
 bool serverpickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
 {
-    const char *hn = sender >= 0 && clients[sender]->type == ST_TCPIP ? clients[sender]->hostname : NULL;
+    if (sender < 0)
+    {
+        return false;
+    }
+    const char *hn = clients[sender]->type == ST_TCPIP ? clients[sender]->hostname : NULL;
     if(!sents.inrange(i))
     {
         if(hn && !m_coop) logline(ACLOG_INFO, "[%s] tried to pick up entity #%d - doesn't exist on this map", hn, i);
         return false;
     }
     server_entity &e = sents[i];
-    if(!e.spawned)
+    client *cl = clients[sender];
+    if(!cl->serverentityspawns[i].spawned)
     {
         if(!e.legalpickup && hn && !m_demo) logline(ACLOG_INFO, "[%s] tried to pick up entity #%d (%s) - can't be picked up in this gamemode or at all", hn, i, entnames[e.type]);
         return false;
     }
-    if(sender>=0)
+    if(cl->type==ST_TCPIP)
     {
-        client *cl = clients[sender];
-        if(cl->type==ST_TCPIP)
+        if( cl->state.state!=CS_ALIVE || !cl->state.canpickup(e.type) || ( m_arena && !free_items(sender) ) ) return false;
+        vec v(e.x, e.y, cl->state.o.z);
+        float dist = cl->state.o.dist(v);
+        int pdist = check_pdist(cl,dist);
+        if (pdist)
         {
-            if( cl->state.state!=CS_ALIVE || !cl->state.canpickup(e.type) || ( m_arena && !free_items(sender) ) ) return false;
-            vec v(e.x, e.y, cl->state.o.z);
-            float dist = cl->state.o.dist(v);
-            int pdist = check_pdist(cl,dist);
-            if (pdist)
-            {
-                cl->farpickups++;
-                if (!m_demo) logline(ACLOG_INFO, "[%s] %s %s up entity #%d (%s), distance %.2f (%d)",
-                     cl->hostname, cl->name, (pdist==2?"tried to pick":"picked"), i, entnames[e.type], dist, cl->farpickups);
-                if (pdist==2) return false;
-            }
+            cl->farpickups++;
+            if (!m_demo) logline(ACLOG_INFO, "[%s] %s %s up entity #%d (%s), distance %.2f (%d)",
+                 cl->hostname, cl->name, (pdist==2?"tried to pick":"picked"), i, entnames[e.type], dist, cl->farpickups);
+            if (pdist==2) return false;
         }
-        sendf(-1, 1, "ri3", SV_ITEMACC, i, sender);
-        cl->state.pickup(sents[i].type);
-        if (m_lss && sents[i].type == I_GRENADE) cl->state.pickup(sents[i].type); // get two nades at lss
     }
-    e.spawned = false;
-    if(!m_lms) e.spawntime = spawntime(e.type);
+    sendf(sender, 1, "ri3", SV_ITEMACC, i, sender);
+    cl->state.pickup(sents[i].type);
+    if (m_lss && sents[i].type == I_GRENADE) cl->state.pickup(sents[i].type); // get two nades at lss
+    cl->serverentityspawns[i].spawned = false;
+    if(!m_lms) cl->serverentityspawns[i].spawntime = spawntime(e.type);
     return true;
 }
 
 void checkitemspawns(int diff)
 {
     if(!diff) return;
-    loopv(sents) if(sents[i].spawntime)
+
+    loopv(clients) if (valid_client(i))
     {
-        sents[i].spawntime -= diff;
-        if(sents[i].spawntime<=0)
+        client *cl = clients[i];
+        loopvj(cl->serverentityspawns) if(cl->serverentityspawns[j].spawntime)
         {
-            sents[i].spawntime = 0;
-            sents[i].spawned = true;
-            sendf(-1, 1, "ri2", SV_ITEMSPAWN, i);
+            cl->serverentityspawns[j].spawntime -= diff;
+            if(cl->serverentityspawns[j].spawntime<=0)
+            {
+                cl->serverentityspawns[j].spawntime = 0;
+                cl->serverentityspawns[j].spawned = true;
+                sendf(i, 1, "ri2", SV_ITEMSPAWN, j);
+            }
         }
     }
 }
@@ -1706,6 +1717,17 @@ int canspawn(client *c)   // beware: canspawn() doesn't check m_arena!
     return SP_OK;
 }
 
+void resetents(client *cl)
+{
+    if (!valid_client(cl->clientnum)) return;
+
+    cl->resetents(sents);
+    loopv(cl->serverentityspawns) if(cl->serverentityspawns[i].spawned)
+    {
+        sendf(cl->clientnum, 1, "ri2", SV_ITEMSPAWN, i);
+    }
+}
+
 /** FIXME: this function is unnecessarily complicated */
 bool updateclientteam(int cln, int newteam, int ftr)
 {
@@ -1763,6 +1785,7 @@ bool updateclientteam(int cln, int newteam, int ftr)
       if ( Lua::callHandler( LUA_ON_PLAYER_TEAM_CHANGE, "iiiR", cl.clientnum, newteam, ftr, &actionResult ) == Lua::PLUGIN_BLOCK )
         return actionResult;
     }
+    resetents(&cl);
     if(cl.team != newteam) sdropflag(cl.clientnum);
     if(ftr != FTR_INFO && (team_isspect(newteam) || (team_isactive(newteam) && team_isactive(cl.team)))) forcedeath(&cl);
     sendf(-1, 1, "riii", SV_SETTEAM, cln, newteam | ((ftr == FTR_SILENTFORCE ? FTR_INFO : ftr) << 4));
@@ -2099,9 +2122,12 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
             {
                 e.type = smapstats.enttypes[i];
                 e.transformtype(smode);
-                server_entity se = { e.type, false, false, false, 0, smapstats.entposs[i * 3], smapstats.entposs[i * 3 + 1], smapstats.entposs[i * 3 + 2]};
+                server_entity se = { e.type, false, false, smapstats.entposs[i * 3], smapstats.entposs[i * 3 + 1], smapstats.entposs[i * 3 + 2]};
                 sents.add(se);
-                if(e.fitsmode(smode)) sents[i].spawned = sents[i].legalpickup = true;
+                if(e.fitsmode(smode)) 
+                {
+                    sents[i].legalpickup = true;
+                }
             }
             mapbuffer.setrevision();
             logline(ACLOG_INFO, "Map height density information for %s: H = %.2f V = %d, A = %d and MA = %d", smapname, Mheight, Mvolume, Marea, Mopen);
@@ -2114,9 +2140,6 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
             sendf(-1, 1, "risiii", SV_MAPCHANGE, smapname, smode, mapbuffer.available(), mapbuffer.revision);
             if(smode>1 || (smode==0 && numnonlocalclients()>0)) sendf(-1, 1, "ri3", SV_TIMEUP, gamemillis, gamelimit);
         }
-        packetbuf q(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
-        send_item_list(q); // always send the item list when a game starts
-        sendpacket(-1, 1, q.finalize());
         defformatstring(gsmsg)("Game start: %s on %s, %d players, %d minutes, mastermode %d, ", modestr(smode), smapname, numclients(), minremain, mastermode);
         if(mastermode == MM_MATCH) concatformatstring(gsmsg, "teamsize %d, ", matchteamsize);
         if(ms) concatformatstring(gsmsg, "(map rev %d/%d, %s, 'getmap' %sprepared)", smapstats.hdr.maprevision, smapstats.cgzsize, maplocstr[maploc], mapbuffer.available() ? "" : "not ");
@@ -2134,12 +2157,20 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
                     refillteams(true, FTR_INFO);
             }
             // prepare spawns; players will spawn, once they've loaded the correct map
-            loopv(clients) if(clients[i]->type!=ST_EMPTY)
+            loopv(clients) if(valid_client(i))
             {
                 client *c = clients[i];
                 c->mapchange();
                 forcedeath(c);
             }
+        }
+        loopv(clients) if(valid_client(i))
+        {
+            client *c = clients[i];
+            resetents(c);
+            packetbuf q(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
+            send_item_list(q, c); // always send the item list when a game starts
+            sendpacket(i, 1, q.finalize());
         }
         if(numnonlocalclients() > 0) setupdemorecord();
         if(notify && m_ktf) sendflaginfo();
@@ -2765,7 +2796,11 @@ void welcomepacket(packetbuf &p, int n)
             putint(p, gamelimit);
             //putint(p, minremain*60);
         }
-        send_item_list(p); // this includes the flags
+        if(c)
+        {
+            logline(ACLOG_INFO, "send_item_list in welcomepacket");
+            send_item_list(p, c); // this includes the flags
+        }
     }
     savedscore *sc = NULL;
     if(c)
@@ -3640,6 +3675,7 @@ void process(ENetPacket *packet, int sender, int chan)
                     if(sc) sc->save(cl->state, cl->team);
                     mapbuffer.sendmap(cl, 2);
                     cl->mapchange(true);
+                    resetents(cl);
                     sendwelcome(cl, 2); // resend state properly
                 }
                 else sendservmsg("no map to get", cl->clientnum);
@@ -3959,6 +3995,7 @@ client &addclient()
         clients.add(c);
     }
     c->reset();
+    resetents(c);
     return *c;
 }
 
