@@ -7,3 +7,4 @@ linux_release
 src/lua/lua
 *.a
 *.so
+*.Plo

@@ -33,7 +33,6 @@ function split (inputstr, sep)
     return t
 end
 
-pickuprespawn = {}
 start_times = {}
 flagspam = {}
 
@@ -364,14 +363,6 @@ function onPlayerDamage(actor_cn, target_cn, damage, actor_gun, gib)
   end
 end
 
-function LuaLoop()
-
-  for i,id in ipairs(pickuprespawn) do
-    spawnitem(id)
-  end
-  pickuprespawn = {}
-end
-
 function onPlayerCallVote(cn, type, text, number)
     if type == SA_AUTOTEAM and not getautoteam() then
         voteend(VOTE_NO)
@@ -389,8 +380,4 @@ function onPlayerCallVote(cn, type, text, number)
             voteend(VOTE_NO)
         end
     end
-end
-
-function onPlayerItemPickup(cn, item_type, item_id)
-    table.insert(pickuprespawn, item_id)
 end

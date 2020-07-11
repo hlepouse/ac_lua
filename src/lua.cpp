@@ -588,8 +588,6 @@ void Lua::registerGlobals( lua_State *L )
   LUA_SET_FUNCTION (luanotice);
   LUA_SET_FUNCTION (getnextmode);
   LUA_SET_FUNCTION (getnextmap);
-  LUA_SET_FUNCTION (getmapitems);
-  LUA_SET_FUNCTION (spawnitem);
   LUA_SET_FUNCTION (removebans);
   LUA_SET_FUNCTION (getscore);
   LUA_SET_FUNCTION (setscore);
@@ -1929,30 +1927,6 @@ LUA_FUNCTION (getnextmap)
 {
   lua_pushstring( L, nextmapname );
   return 1;
-}
-
-LUA_FUNCTION (getmapitems)
-{
-  lua_newtable( L );
-  loopv( sents )
-  {
-    lua_pushinteger( L, i );
-    lua_pushinteger( L, sents[i].type );
-    lua_settable( L, 1 );
-  }
-  return 1;
-}
-
-LUA_FUNCTION (spawnitem)
-{
-  lua_checkstack( L, 1 );
-  if ( !lua_isnumber( L, 1 ) ) return 0;
-  int item_id = (int) lua_tonumber( L, 1 );
-  if ( !sents.inrange( item_id ) ) return 0;
-  sents[item_id].spawntime = 0;
-  sents[item_id].spawned = true;
-  sendf( -1, 1, "ri2", SV_ITEMSPAWN, item_id );
-  return 0;
 }
 
 LUA_FUNCTION (removebans)
