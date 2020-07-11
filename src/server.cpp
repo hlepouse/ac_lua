@@ -500,6 +500,17 @@ void sendservmsg(const char *msg, int cn = -1)
     sendf(cn, 1, "ris", SV_SERVMSG, msg);
 }
 
+void resetents(client *cl)
+{
+    if (!valid_client(cl->clientnum)) return;
+
+    cl->resetents(sents);
+    loopv(cl->serverentityspawns) if(cl->serverentityspawns[i].spawned)
+    {
+        sendf(cl->clientnum, 1, "ri2", SV_ITEMSPAWN, i);
+    }
+}
+
 void sendspawn(client *c, bool fromLua = false)
 {
     if(team_isspect(c->team)) return;
@@ -508,6 +519,7 @@ void sendspawn(client *c, bool fromLua = false)
     gs.respawn();
     gs.spawnstate(smode);
     gs.lifesequence++;
+    resetents(c);
     sendf(c->clientnum, 1, "ri7vv", SV_SPAWNSTATE, gs.lifesequence,
         gs.health, gs.armour,
         gs.primary, gs.gunselect, m_arena ? c->spawnindex : -1,
@@ -1715,17 +1727,6 @@ int canspawn(client *c)   // beware: canspawn() doesn't check m_arena!
         }
     }
     return SP_OK;
-}
-
-void resetents(client *cl)
-{
-    if (!valid_client(cl->clientnum)) return;
-
-    cl->resetents(sents);
-    loopv(cl->serverentityspawns) if(cl->serverentityspawns[i].spawned)
-    {
-        sendf(cl->clientnum, 1, "ri2", SV_ITEMSPAWN, i);
-    }
 }
 
 /** FIXME: this function is unnecessarily complicated */

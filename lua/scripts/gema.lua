@@ -183,7 +183,7 @@ commands =
   ["!cmds"] =
   {
     function (cn, args)
-		  say("\f1Available commands : \f2!mybest \fP| \f2!maptop \fP| \f2!best \f1<cn> \fP| \f2!ext \f1<time>", cn)
+		  say("\f1Available commands : \f2!reset \fP| \f2!mybest \fP| \f2!maptop \fP| \f2!best \f1<cn> \fP| \f2!ext \f1<time>", cn)
 	 end
   };
 
@@ -275,6 +275,13 @@ commands =
         local modulo = delta % 60000
         say(string.format("\f1The best time of player \f2%s \f1for this map is \f2%02d:%02d:%03d \f1(%d%s place)", getname(target_cn), delta / 60000, modulo / 1000, modulo % 1000, rank, suffixe), cn)
       end
+    end
+  };
+
+  ["!reset"] =
+  {
+    function (cn, args)
+        sendspawn(cn)
     end
   };
 
