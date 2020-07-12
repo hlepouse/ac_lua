@@ -282,7 +282,10 @@ commands =
   ["!reset"] =
   {
     function (cn, args)
-      sendspawn(cn)
+        sdropflag(cn)
+        flagspam[getip(cn)] = nil
+        sendspawn(cn)
+        start_times[cn] = getsvtick()
     end
   };
 }
