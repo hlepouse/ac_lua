@@ -281,7 +281,10 @@ commands =
   ["!reset"] =
   {
     function (cn, args)
+        sdropflag(cn)
+        flagspam[getip(cn)] = nil
         sendspawn(cn)
+        start_times[cn] = getsvtick()
     end
   };
 

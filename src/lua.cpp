@@ -679,6 +679,8 @@ void Lua::registerGlobals( lua_State *L )
   LUA_SET_FUNCTION (isinwater);
   LUA_SET_FUNCTION (isunderwater);
   LUA_SET_FUNCTION (callgenerator);
+  LUA_SET_FUNCTION (sdropflag);
+  //LUA_SET_FUNCTION (resetflag);
 }
 
 static LuaArg* prepareArgs( const char *arguments, va_list vl, int &argc )
@@ -3222,5 +3224,24 @@ LUA_FUNCTION (callgenerator)
   return n;
 }
 
+LUA_FUNCTION (sdropflag)
+{
+  lua_checkstack( L, 1 );
+  if ( !lua_isnumber( L, 1 ) ) return 0;
+  int player_cn = (int) lua_tonumber( L, 1 );
+  if ( !valid_client( player_cn ) ) return 0;
+  sdropflag(player_cn);
+  return 1;
+}
+
+/*LUA_FUNCTION (resetflag)
+{
+  lua_checkstack( L, 1 );
+  if ( !lua_isnumber( L, 1 ) ) return 0;
+  int player_cn = (int) lua_tonumber( L, 1 );
+  if ( !valid_client( player_cn ) ) return 0;
+  resetflag(player_cn);
+  return 1;
+}*/
 
 //END Lua global functions
