@@ -406,16 +406,42 @@ savedscore *findscore(client &c, bool insert)
     return &sc;
 }
 
-void restoreserverstate(vector<entity> &ents)   // hack: called from savegame code, only works in SP
+int spawntime(int type)
 {
-    loopv(clients) if(clients[i]->type!=ST_EMPTY)
+    int np = 1;
+    np = np<3 ? 4 : (np>4 ? 2 : 3);    // Some spawn times are dependent on the number of players.
+    int sec = 0;
+    switch(type)
     {
-        client &c = *clients[i];
-        loopvj(c.serverentityspawns)
-        {
-            c.serverentityspawns[j].spawned = ents[j].spawned;
-            c.serverentityspawns[j].spawntime = 0;
-        }
+    // Please update ./ac_website/htdocs/docs/introduction.html if these times change.
+        case I_CLIPS:
+        case I_AMMO: sec = np*2; break;
+        case I_GRENADE: sec = np + 5; break;
+        case I_HEALTH: sec = np*5; break;
+        case I_HELMET:
+        case I_ARMOUR: sec = 25; break;
+        case I_AKIMBO: sec = 60; break;
+    }
+    return sec*1000;
+}
+
+void reloadents(client *cl)
+{
+    if (!valid_client(cl->clientnum)) return;
+    cl->serverentityspawns.shrink(0);
+    loopv(sents)
+    {
+        cl->serverentityspawns.add({sents[i].legalpickup, false, spawntime(sents[i].type), 0});
+    }
+}
+
+void resetents(client *cl)
+{
+    if (!valid_client(cl->clientnum)) return;
+    loopv(cl->serverentityspawns)
+    {
+        cl->serverentityspawns[i].spawned = false;
+        cl->serverentityspawns[i].timer = 0;
     }
 }
 
@@ -500,17 +526,6 @@ void sendservmsg(const char *msg, int cn = -1)
     sendf(cn, 1, "ris", SV_SERVMSG, msg);
 }
 
-void resetents(client *cl)
-{
-    if (!valid_client(cl->clientnum)) return;
-
-    cl->resetents(sents);
-    loopv(cl->serverentityspawns) if(cl->serverentityspawns[i].spawned)
-    {
-        sendf(cl->clientnum, 1, "ri2", SV_ITEMSPAWN, i);
-    }
-}
-
 void sendspawn(client *c, bool fromLua = false)
 {
     if(team_isspect(c->team)) return;
@@ -519,7 +534,6 @@ void sendspawn(client *c, bool fromLua = false)
     gs.respawn();
     gs.spawnstate(smode);
     gs.lifesequence++;
-    resetents(c);
     sendf(c->clientnum, 1, "ri7vv", SV_SPAWNSTATE, gs.lifesequence,
         gs.health, gs.armour,
         gs.primary, gs.gunselect, m_arena ? c->spawnindex : -1,
@@ -974,7 +988,7 @@ void putflaginfo(packetbuf &p, int flag)
 inline void send_item_list(packetbuf &p, client *c)
 {
     putint(p, SV_ITEMLIST);
-    loopv(c->serverentityspawns) if(c->serverentityspawns[i].spawned)
+    loopv(c->serverentityspawns) if(c->serverentityspawns[i].legalpickup)
     {
         //logline(ACLOG_INFO, "add item");
         putint(p, i);
@@ -1512,25 +1526,6 @@ int numplayers()
     return count;
 }
 
-int spawntime(int type)
-{
-    int np = 1;
-    np = np<3 ? 4 : (np>4 ? 2 : 3);    // Some spawn times are dependent on the number of players.
-    int sec = 0;
-    switch(type)
-    {
-    // Please update ./ac_website/htdocs/docs/introduction.html if these times change.
-        case I_CLIPS:
-        case I_AMMO: sec = np*2; break;
-        case I_GRENADE: sec = np + 5; break;
-        case I_HEALTH: sec = np*5; break;
-        case I_HELMET:
-        case I_ARMOUR: sec = 25; break;
-        case I_AKIMBO: sec = 60; break;
-    }
-    return sec*1000;
-}
-
 bool serverpickup(int i, int sender)         // server side item pickup, acknowledge first client that gets it
 {
     if (sender < 0)
@@ -1568,7 +1563,7 @@ bool serverpickup(int i, int sender)         // server side item pickup, acknowl
     cl->state.pickup(sents[i].type);
     if (m_lss && sents[i].type == I_GRENADE) cl->state.pickup(sents[i].type); // get two nades at lss
     cl->serverentityspawns[i].spawned = false;
-    if(!m_lms) cl->serverentityspawns[i].spawntime = spawntime(e.type);
+    if(!m_lms) cl->serverentityspawns[i].timer = cl->serverentityspawns[i].spawntime;
     return true;
 }
 
@@ -1579,12 +1574,12 @@ void checkitemspawns(int diff)
     loopv(clients) if (valid_client(i))
     {
         client *cl = clients[i];
-        loopvj(cl->serverentityspawns) if(cl->serverentityspawns[j].spawntime)
+        loopvj(cl->serverentityspawns) if(cl->serverentityspawns[j].legalpickup && !cl->serverentityspawns[j].spawned)
         {
-            cl->serverentityspawns[j].spawntime -= diff;
-            if(cl->serverentityspawns[j].spawntime<=0)
+            cl->serverentityspawns[j].timer -= diff;
+            if(cl->serverentityspawns[j].timer<=0)
             {
-                cl->serverentityspawns[j].spawntime = 0;
+                cl->serverentityspawns[j].timer = cl->serverentityspawns[j].spawntime;
                 cl->serverentityspawns[j].spawned = true;
                 sendf(i, 1, "ri2", SV_ITEMSPAWN, j);
             }
@@ -1786,7 +1781,6 @@ bool updateclientteam(int cln, int newteam, int ftr)
       if ( Lua::callHandler( LUA_ON_PLAYER_TEAM_CHANGE, "iiiR", cl.clientnum, newteam, ftr, &actionResult ) == Lua::PLUGIN_BLOCK )
         return actionResult;
     }
-    resetents(&cl);
     if(cl.team != newteam) sdropflag(cl.clientnum);
     if(ftr != FTR_INFO && (team_isspect(newteam) || (team_isactive(newteam) && team_isactive(cl.team)))) forcedeath(&cl);
     sendf(-1, 1, "riii", SV_SETTEAM, cln, newteam | ((ftr == FTR_SILENTFORCE ? FTR_INFO : ftr) << 4));
@@ -2130,6 +2124,7 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
                     sents[i].legalpickup = true;
                 }
             }
+            logline(ACLOG_INFO, "added ents");
             mapbuffer.setrevision();
             logline(ACLOG_INFO, "Map height density information for %s: H = %.2f V = %d, A = %d and MA = %d", smapname, Mheight, Mvolume, Marea, Mopen);
             items_blocked = false;
@@ -2168,7 +2163,7 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
         loopv(clients) if(valid_client(i))
         {
             client *c = clients[i];
-            resetents(c);
+            reloadents(c);
             packetbuf q(MAXTRANS, ENET_PACKET_FLAG_RELIABLE);
             send_item_list(q, c); // always send the item list when a game starts
             sendpacket(i, 1, q.finalize());
@@ -3675,7 +3670,7 @@ void process(ENetPacket *packet, int sender, int chan)
                     if(sc) sc->save(cl->state, cl->team);
                     mapbuffer.sendmap(cl, 2);
                     cl->mapchange(true);
-                    resetents(cl);
+                    reloadents(cl);
                     sendwelcome(cl, 2); // resend state properly
                 }
                 else sendservmsg("no map to get", cl->clientnum);
@@ -3996,7 +3991,7 @@ client &addclient()
         clients.add(c);
     }
     c->reset();
-    resetents(c);
+    reloadents(c);
     return *c;
 }
 

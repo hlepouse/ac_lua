@@ -873,7 +873,6 @@ extern void filterlang(char *d, const char *s);
 extern void trimtrailingwhitespace(char *s);
 extern void cutcolorstring(char *text, int len);
 extern void startintermission();
-extern void restoreserverstate(vector<entity> &ents);
 //extern string mastername;
 extern int masterport, mastertype;
 extern ENetSocket connectmaster(int m);

@@ -229,8 +229,10 @@ struct medals
 
 struct server_entity_spawn
 {
+    bool legalpickup;
     bool spawned;
     int spawntime;
+    int timer;
 };
 
 struct server_entity            // server side version of "entity" type
@@ -303,15 +305,6 @@ struct client                   // server side version of "dynent" type
         static gameevent dummy;
         if(events.length()>100) return dummy;
         return events.add();
-    }
-
-    void resetents(vector<server_entity> &sents)
-    {
-        serverentityspawns.shrink(0);
-        loopv(sents)
-        {
-            serverentityspawns.add({sents[i].legalpickup,0});
-        }
     }
 
     void mapchange(bool getmap = false)

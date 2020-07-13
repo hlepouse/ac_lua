@@ -284,6 +284,7 @@ commands =
         sdropflag(cn)
         flagspam[getip(cn)] = nil
         sendspawn(cn)
+        resetents(cn)
         start_times[cn] = getsvtick()
     end
   };
@@ -363,6 +364,7 @@ function onFlagAction(cn, action, flag)
 end
 
 function onPlayerSpawn(cn)
+    resetents(cn)
     start_times[cn] = getsvtick()
     flagspam[getip(cn)] = nil
 end

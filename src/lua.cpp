@@ -72,6 +72,7 @@ extern void sendteamtext( char*, int, int );
 extern void sendvoicecomteam( int, int );
 extern void rereadcfgs( bool fromLua = true );
 extern int clienthasflag( int );
+extern void resetents( client* );
 
 
 struct pwddetail
@@ -680,6 +681,7 @@ void Lua::registerGlobals( lua_State *L )
   LUA_SET_FUNCTION (isunderwater);
   LUA_SET_FUNCTION (callgenerator);
   LUA_SET_FUNCTION (sdropflag);
+  LUA_SET_FUNCTION (resetents);
   //LUA_SET_FUNCTION (resetflag);
 }
 
@@ -3243,5 +3245,15 @@ LUA_FUNCTION (sdropflag)
   resetflag(player_cn);
   return 1;
 }*/
+
+LUA_FUNCTION (resetents)
+{
+  lua_checkstack( L, 1 );
+  if ( !lua_isnumber( L, 1 ) ) return 0;
+  int player_cn = (int) lua_tonumber( L, 1 );
+  if ( !valid_client( player_cn ) ) return 0;
+  resetents(clients[player_cn]);
+  return 1;
+}
 
 //END Lua global functions
