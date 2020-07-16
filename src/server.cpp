@@ -438,11 +438,14 @@ void reloadents(client *cl)
 void resetents(client *cl)
 {
     if (!valid_client(cl->clientnum)) return;
+
     loopv(cl->serverentityspawns)
     {
         cl->serverentityspawns[i].spawned = false;
         cl->serverentityspawns[i].timer = 0;
     }
+
+    if (cl->serverentityspawns.empty()) reloadents(cl);
 }
 
 void sendf(int cn, int chan, const char *format, ...)
