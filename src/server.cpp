@@ -2127,7 +2127,6 @@ void startgame(const char *newname, int newmode, int newtime, bool notify, bool 
                     sents[i].legalpickup = true;
                 }
             }
-            logline(ACLOG_INFO, "added ents");
             mapbuffer.setrevision();
             logline(ACLOG_INFO, "Map height density information for %s: H = %.2f V = %d, A = %d and MA = %d", smapname, Mheight, Mvolume, Marea, Mopen);
             items_blocked = false;
@@ -2995,6 +2994,7 @@ void process(ENetPacket *packet, int sender, int chan)
             }
         }
 
+        reloadents(cl);
         sendwelcome(cl);
         if(restorescore(*cl)) { sendresume(*cl, true); senddisconnectedscores(-1); }
         else if(cl->type==ST_TCPIP) senddisconnectedscores(sender);
@@ -3097,6 +3097,21 @@ void process(ENetPacket *packet, int sender, int chan)
                 trimtrailingwhitespace(text);
                 if(*text)
                 {
+                    if (!strcmp(text, "!debug")) {
+                        int nb_entities = 0;
+                        int nb_legal_entities = 0;
+                        int nb_spawned_entities = 0;
+                        int max_timer = -1;
+                        loopv(cl->serverentityspawns)
+                        {
+                            nb_entities++;
+                            if (cl->serverentityspawns[i].legalpickup) nb_legal_entities++;
+                            if (cl->serverentityspawns[i].spawned) nb_spawned_entities++;
+                            if (cl->serverentityspawns[i].legalpickup && cl->serverentityspawns[i].timer > max_timer) max_timer = cl->serverentityspawns[i].timer;
+                        }
+                        defformatstring(msg)("nb_entities=%d;nb_legal_entities=%d;nb_spawned_entities=%d;max_timer=%d", nb_entities, nb_legal_entities, nb_spawned_entities, max_timer);
+                        sendservmsg(msg, sender);
+                    }
                     if ( Lua::callHandler( LUA_ON_PLAYER_SAY_TEXT, "isbb", cl->clientnum, text, false, type == SV_TEXTME ) == Lua::PLUGIN_BLOCK ) break;
                     bool canspeech = forbiddenlist.canspeech(text, cl->clientnum);
                     if(!spamdetect(cl, text) && canspeech)
