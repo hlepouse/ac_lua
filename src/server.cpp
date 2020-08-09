@@ -3656,7 +3656,7 @@ void process(ENetPacket *packet, int sender, int chan)
                 {
                     if(mapbuffer.sendmap(sentmap, mapsize, cfgsize, cfgsizegz, &p.buf[p.len]))
                     {
-                        incoming_size += mapsize + cfgsizegz;
+                        //incoming_size += mapsize + cfgsizegz;
                         logline(ACLOG_INFO,"[%s] %s sent map %s, rev %d, %d + %d(%d) bytes written",
                                     clients[sender]->hostname, clients[sender]->name, sentmap, revision, mapsize, cfgsize, cfgsizegz);
                         defformatstring(msg)("%s (%d) up%sed map %s, rev %d%s", clients[sender]->name, sender, mp == MAP_NOTFOUND ? "load": "dat", sentmap, revision,
