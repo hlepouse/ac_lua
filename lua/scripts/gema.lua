@@ -242,9 +242,14 @@ commands =
       if next(sorted_records) == nil then
         say("\f1Map top is empty", cn)
       else
+	if #args == 1 then
+          local maptop_amount = tonumber(args[1])
+	else
+	  local maptop_amount = 5
+	end
         say("\f1Fastest players of this map :", cn)
         for i, record in ipairs(sorted_records) do
-          if i > 5 then break end
+          if i > maptop_amount then break end
           local modulo = record[2] % 60000
           say(string.format("\f1%d. \f2%s \f0%02d:%02d:%03d", i, record[1], record[2] / 60000, modulo / 1000, modulo % 1000), cn)
         end
