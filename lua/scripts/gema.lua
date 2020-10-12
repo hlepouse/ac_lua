@@ -241,10 +241,9 @@ commands =
       if next(sorted_records) == nil then
         say("\f1Map top is empty", cn)
       else
+	local maptop_amount = 10
 	if #args == 1 then
-          local maptop_amount = tonumber(args[1])
-	else
-	  local maptop_amount = 5
+          maptop_amount = tonumber(args[1])
 	end
         say("\f1Fastest players of this map :", cn)
         for i, record in ipairs(sorted_records) do
