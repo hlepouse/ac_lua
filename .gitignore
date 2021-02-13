@@ -7,3 +7,7 @@ linux_release
 src/lua/lua
 *.a
 *.so
+*.log
+enet/configure
+enet/libtool
+enet/autom4te.cache
