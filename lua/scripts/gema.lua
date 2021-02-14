@@ -184,7 +184,7 @@ commands =
   ["!cmds"] =
   {
     function (cn, args)
-		  say("\f1Available commands : \f2!mybest \fP| \f2!maptop \fP| \f2!best \f1<cn> \fP| \f2!ext \f1<time>", cn)
+		  say("\f1Available commands : \f2!reset \fP| \f2!mybest \fP| \f2!maptop \fP| \f2!best \f1<cn> \fP| \f2!ext \f1<time>", cn)
 	 end
   };
 
@@ -279,7 +279,13 @@ commands =
     end
   };
 
-  }
+  ["!reset"] =
+  {
+    function (cn, args)
+      sendspawn(cn)
+    end
+  };
+}
 
 function isGema(mapname)
   local s = string.lower(mapname)
