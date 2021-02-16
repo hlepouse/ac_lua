@@ -2907,8 +2907,16 @@ void process(ENetPacket *packet, int sender, int chan)
             copystring(cl->pwd, text);
             getstring(text, p);
             filterlang(cl->lang, text);
-            int wantrole = getint(p);
-            cl->state.nextprimary = getint(p);
+            int wantrole = getint(p), np = getint(p);
+            if(np > 0 && np < NUMGUNS)
+            {
+                cl->state.nextprimary = np;
+            }
+            else
+            {
+                cl->state.nextprimary = GUN_ASSAULT;
+		logline(ACLOG_INFO, "Someone tried to hack the server !");
+            }
             loopi(2) cl->skin[i] = getint(p);
             Lua::callHandler( LUA_ON_PLAYER_PRECONNECT, "i", sender );
             int bantype = getbantype(sender);
