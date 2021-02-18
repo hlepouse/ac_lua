@@ -62,6 +62,7 @@ commands =
 	{
 		function (cn, args)
 			for player in players() do
+				local team = getteam(player)
 				if team == TEAM_RVSF then
 					forceTeam(player, TEAM_CLA)
 				elseif team == TEAM_CLA then
@@ -78,6 +79,7 @@ commands =
 			local playerName -- one active player name
 
 			for player in players() do
+				local team = getteam(player)
 				if team == TEAM_RVSF or team == TEAM_CLA then
 					playerName = getname(player)
 					break
@@ -93,6 +95,7 @@ commands =
 			for i = 1, playerName:len() do
 
 				for player in players() do
+					local team = getteam(player)
 					if team == TEAM_RVSF or team == TEAM_CLA then
 						if playerName:sub(1, i) ~= getname(player):sub(1, i) then
 							tagIndex = i
@@ -111,6 +114,7 @@ commands =
 			local team2 = {}
 
 			for player in players() do
+				local team = getteam(player)
 				if team == TEAM_RVSF or team == TEAM_CLA then
 					local player_cn = player
 					if playerName:sub(1, tagIndex) == getname(player_cn):sub(1, tagIndex) then
@@ -122,11 +126,11 @@ commands =
 			end
 
 			for i, player_cn in ipairs(team1) do
-				forceTeam(player_cn, TEAM_CLA)
+				forceTeam(player_cn, TEAM_RVSF)
 			end
 
 			for i, player_cn in ipairs(team2) do
-				forceTeam(player_cn, TEAM_RVSF)
+				forceTeam(player_cn, TEAM_CLA)
 			end
 		end
 	};
