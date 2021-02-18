@@ -4,27 +4,6 @@ PLUGIN_VERSION = "14 feb 2021"
 
 -- common
 
-function split (inputstr, sep)
-    if sep == nil then
-            sep = "%s"
-    end
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-            table.insert(t, str)
-    end
-    return t
-end
-
-function pretty_split(text)
-    local splitted_text = split(text, " ")
-    for index, subtext in ipairs(splitted_text) do
-        if subtext == "" then
-            table.remove(splitted_text, index)
-        end
-    end
-    return splitted_text
-end
-
 function say(text, cn)
   if cn == nil then cn = -1 end
   clientprint(cn, text)
@@ -51,24 +30,15 @@ function slice(array, S, E)
   return result
 end
 
-function cnadmin()
-    for i = 0, maxclient() - 1 do
-        if isadmin(i) then
-            return i
-        end
-    end
-    return nil
-end
-
 -- commands
 -- params: { admin right, modo right, common right, show message in chat }
 
-function forceteam(cn, team)
+function forceTeam(cn, team)
 	setteam(cn, team, 1)
 end
 
 commands =
- {
+{
   ["!cmds"] =
   {
     function (cn, args)
@@ -79,16 +49,72 @@ commands =
   ["!switchteams"] =
   {
     function (cn, args)
-    	for i = 0, maxclient() - 1 do
-        	if isconnected(i) then
-			team = getteam(i)
-			if team == 0 then
-				forceteam(i, 1)
-			elseif team == 1 then
-				forceteam(i, 0)
-			end
-		end
+    	for player in rvsf() do
+        forceTeam(player.player_cn, TEAM_CLA)
+      end
+      for player in cla() do
+        forceTeam(player.player_cn, TEAM_RVSF)
+      end
+    end
+  };
+
+  ["!sortteams"] =
+  {
+    function (cn, args)
+
+      local playerName -- one active player name
+
+      for player in players() do
+        if team == TEAM_RVSF or team == TEAM_CLA then
+          playerName = getname(player.player_cn)
+          break
         end
+      end
+
+      if playerName == nil then
+        return
+      end
+
+      local tagIndex -- the prefix length we need to check in order to differentiate the 2 teams
+
+      for i = 1, playerName:len() do
+
+        for player in players() do
+          if team == TEAM_RVSF or team == TEAM_CLA then
+            if playerName:sub(1, i) ~= getname(player.player_cn):sub(1, i) then
+              tagIndex = i
+              break
+            end
+          end
+        end
+
+        if tagIndex ~= nil then
+          break
+        end
+
+      end
+
+      local team1 = {}
+      local team2 = {}
+
+      for player in players() do
+        if team == TEAM_RVSF or team == TEAM_CLA then
+          local player_cn = player.player_cn
+          if playerName:sub(1, tagIndex) == getname(player_cn):sub(1, tagIndex) then
+            table.insert(team1, player_cn)
+          else
+            table.insert(team2, player_cn)
+          end
+        end
+      end
+
+      for i, player_cn in ipairs(team1) do
+        forceTeam(player_cn, TEAM_CLA)
+      end
+
+      for i, player_cn in ipairs(team2) do
+        forceTeam(player_cn, TEAM_RVSF)
+      end
     end
   };
 }
@@ -108,11 +134,11 @@ function onPlayerSayText(cn, text)
 end
 
 function onPlayerConnect(cn)
-    setautoteam(false)
+  setautoteam(false)
 end
 
-function onFlagActionBefore(cn, action, flag)
-  if action == FA_STEAL and flagspam[getip(cn)] ~= nil then
-    return PLUGIN_BLOCK
+function onPlayerCallVote(cn, type, text, number)
+  if type == SA_AUTOTEAM and not getautoteam() then
+    voteend(VOTE_NO)
   end
 end
