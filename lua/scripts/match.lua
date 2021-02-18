@@ -83,9 +83,9 @@ commands =
         	if isconnected(i) then
 			team = getteam(i)
 			if team == 0 then
-				forceteam(cn, 1)
-			else
-				forceteam(cn, 0)
+				forceteam(i, 1)
+			elseif team == 1 then
+				forceteam(i, 0)
 			end
 		end
         end
