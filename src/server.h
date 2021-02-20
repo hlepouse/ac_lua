@@ -121,8 +121,9 @@ struct clientstate : playerstate
     int akimbomillis;
     bool scoped;
     int flagscore, frags, teamkills, deaths, shotdamage, damage, points, events, lastdisc, reconnections;
+    int shots, unhits;
 
-    clientstate() : state(CS_DEAD) {}
+    clientstate() : state(CS_DEAD), shots(0), unhits(0) {}
 
     bool isalive(int gamemillis)
     {

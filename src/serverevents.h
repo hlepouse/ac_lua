@@ -40,9 +40,14 @@ void processevent(client *c, shotevent &e)
     int wait = e.millis - gs.lastshot;
     if(!gs.isalive(gamemillis) ||
        e.gun<GUN_KNIFE || e.gun>=NUMGUNS ||
-       ( !hitreg_fixed && wait<gs.gunwait[e.gun] ) ||
        gs.mag[e.gun]<=0)
         return;
+    gs.shots++;
+    if ( wait<gs.gunwait[e.gun] ) {
+       gs.unhits++;
+       if ( !hitreg_fixed )
+          return;
+    }
     if(e.gun!=GUN_KNIFE) gs.mag[e.gun]--;
     loopi(NUMGUNS) if(gs.gunwait[i]) gs.gunwait[i] = max(gs.gunwait[i] - (e.millis-gs.lastshot), 0);
     gs.lastshot = e.millis;

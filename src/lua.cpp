@@ -621,6 +621,8 @@ void Lua::registerGlobals( lua_State *L )
   LUA_SET_FUNCTION (getbans);
   LUA_SET_FUNCTION (getmaprotnextentry);
   LUA_SET_FUNCTION (getspawnmillis);
+  LUA_SET_FUNCTION (getshots);
+  LUA_SET_FUNCTION (getunhits);
   LUA_SET_FUNCTION (players);
   LUA_SET_FUNCTION (spectators);
   LUA_SET_FUNCTION (rvsf);
@@ -2444,6 +2446,26 @@ LUA_FUNCTION (getspawnmillis)
   int player_cn = (int) lua_tonumber( L, 1 );
   if ( !valid_client( player_cn ) ) return 0;
   lua_pushinteger( L, clients[player_cn]->state.spawn );
+  return 1;
+}
+
+LUA_FUNCTION (getshots)
+{
+  lua_checkstack( L, 1 );
+  if ( !lua_isnumber( L, 1 ) ) return 0;
+  int player_cn = (int) lua_tonumber( L, 1 );
+  if ( !valid_client( player_cn ) ) return 0;
+  lua_pushinteger( L, clients[player_cn]->state.shots );
+  return 1;
+}
+
+LUA_FUNCTION (getunhits)
+{
+  lua_checkstack( L, 1 );
+  if ( !lua_isnumber( L, 1 ) ) return 0;
+  int player_cn = (int) lua_tonumber( L, 1 );
+  if ( !valid_client( player_cn ) ) return 0;
+  lua_pushinteger( L, clients[player_cn]->state.unhits );
   return 1;
 }
 

@@ -55,7 +55,14 @@ commands =
 	["!cmds"] =
 	{
 		function (cn, args)
-			say("\f1Available commands : \f2!sortteams \fP| \f2!switchteams", cn)
+			say("\fPAvailable commands : \fY!sortteams \fP| \fY!switchteams \fP| \fY!unhits", cn)
+		end
+	};
+
+	["!unhits"] =
+	{
+		function (cn, args)
+        		say(string.format("\fPHitreg fix is \f0ENABLED \fP! Otherwise you would've lost \fY%i / \fY%i \fPshots", getunhits(cn), getshots(cn)), cn)
 		end
 	};
 
