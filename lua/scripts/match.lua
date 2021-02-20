@@ -46,6 +46,7 @@ end
 -- params: { admin right, modo right, common right, show message in chat }
 
 function forceTeam(cn, team)
+	forcedeath(cn)
 	setteam(cn, team, 1)
 end
 
@@ -61,6 +62,9 @@ commands =
 	["!switchteams"] =
 	{
 		function (cn, args)
+			if not isadmin(cn) then
+				return
+			end
 			for player in players() do
 				local team = getteam(player)
 				if team == TEAM_RVSF then
@@ -75,6 +79,10 @@ commands =
 	["!sortteams"] =
 	{
 		function (cn, args)
+
+			if not isadmin(cn) then
+				return
+			end
 
 			local playerName -- one active player name
 
