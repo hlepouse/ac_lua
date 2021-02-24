@@ -162,6 +162,13 @@ function onPlayerSayText(cn, text)
 		return PLUGIN_BLOCK       
 	elseif string.byte(command,1) == string.byte("!",1) then
 		return PLUGIN_BLOCK
+	else
+		for player in players() do
+			if player ~= cn then
+				say(getname(cn) .. "\f1#" .. cn .. "\fY: \f0" .. text, player)
+			end
+		end
+		return PLUGIN_BLOCK
 	end
 end
 
