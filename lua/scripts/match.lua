@@ -55,7 +55,7 @@ commands =
 	["!cmds"] =
 	{
 		function (cn, args)
-			say("\fPAvailable commands : \fY!sortteams \fP| \fY!switchteams \fP| \fY!unhits", cn)
+			say("\fPAvailable commands : \fY!sortteams \fP| \fY!switchteams \fP| \fY!bench <cn> \fP| \fY!unhits", cn)
 		end
 	};
 
@@ -63,6 +63,19 @@ commands =
 	{
 		function (cn, args)
         		say(string.format("\fPHitreg fix is \f0ENABLED \fP! Otherwise you would've lost \fY%i / \fY%i \fPshots", getunhits(cn), getshots(cn)), cn)
+		end
+	};
+
+	["!bench"] =
+	{
+		function (cn, args)
+			if not isadmin(cn) then
+				return
+			end
+      			if #args == 1 then
+				local player = tonumber(args[1])
+				forceTeam(player, TEAM_SPECT)
+			end
 		end
 	};
 
