@@ -72,9 +72,15 @@ commands =
 			if not isadmin(cn) then
 				return
 			end
-      			if #args == 1 then
-				local player = tonumber(args[1])
-				forceTeam(player, TEAM_SPECT)
+      			if #args ~= 1 then
+				return
+			end
+			local player = tonumber(args[1])
+			local team = getteam(player)
+			if team == TEAM_CLA then
+				forceTeam(player, TEAM_CLA_SPECT)
+			elseif team == TEAM_RVSF then
+				forceTeam(player, TEAM_RVSF_SPECT)
 			end
 		end
 	};
