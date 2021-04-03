@@ -3032,7 +3032,7 @@ void process(ENetPacket *packet, int sender, int chan)
         ENetPacket *packet = buf.finalize();
 
     int curmsg;
-    while((curmsg = p.length()) < p.maxlen)
+    while((curmsg = p.length()) < p.maxlen && p.length() >= 0)
     {
         type = checktype(getint(p), cl);
 
